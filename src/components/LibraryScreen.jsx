@@ -24,8 +24,10 @@ export default function LibraryScreen({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       const matchTitle = lesson.title.toLowerCase().includes(q);
-      const matchObjective = lesson.objective.toLowerCase().includes(q);
-      if (!matchTitle && !matchObjective) return false;
+      const matchObjective = lesson.objective && lesson.objective.toLowerCase().includes(q);
+      const matchSituation = lesson.situation && lesson.situation.toLowerCase().includes(q);
+      const matchTakeaway = lesson.conclusion?.keyTakeaway && lesson.conclusion.keyTakeaway.toLowerCase().includes(q);
+      if (!matchTitle && !matchObjective && !matchSituation && !matchTakeaway) return false;
     }
     // 3. Status filter
     const isLearned = completedLessonIds.includes(lesson.id) || index < currentLessonIndex;

@@ -1,3 +1,5 @@
+import { CORE_SKILLS_CATALOG } from './core_skills_catalog.js';
+import { ADDITIONAL_SKILLS } from './additional_skills_catalog.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -134,118 +136,83 @@ const PRIMARY_SCHOOL_LESSONS = {
   ]
 };
 
-// Hàm sinh chi tiết chuẩn sư phạm dành cho học sinh Cấp 1
-function buildPrimaryLesson(id, title, pillar, icon, duration) {
-  const script = [
-    {
-      speaker: 'Ba Mẹ / Thầy Cô',
-      role: 'parent',
-      avatar: '👨‍🏫',
-      text: `Con yêu, hôm nay chúng ta cùng rèn luyện một kỹ năng rất quan trọng của học sinh tiểu học: "${title}". Kỹ năng này sẽ giúp con ngày càng tự lập, tự tin và được thầy cô, bạn bè yêu quý.`,
-      tip: 'Trò chuyện bằng thái độ tôn trọng, khích lệ tinh thần tự giác của học sinh cấp 1.'
-    },
-    {
-      speaker: 'Học sinh',
-      role: 'child',
-      avatar: '🎒',
-      text: `Dạ vâng ạ! Con muốn thực hiện tốt "${title}". Ba mẹ / thầy cô hướng dẫn các bước cụ thể cho con nhé!`,
-      tip: 'Con chủ động ghi nhận và sẵn sàng bắt tay vào rèn luyện.'
-    },
-    {
-      speaker: 'Ba Mẹ / Thầy Cô',
-      role: 'parent',
-      avatar: '👨‍🏫',
-      text: `Rất tốt! Chúng ta sẽ cùng thực hiện từng bước cụ thể. Con hãy chủ động làm từng việc, nếu gặp khó khăn hãy nói ra để cùng nhau tìm giải pháp nhé!`,
-      tip: 'Trao quyền tự chủ cho học sinh, hướng dẫn con cách giải quyết vấn đề thay vì làm hộ.'
-    }
-  ];
-
-  const activity = {
-    type: 'checklist',
-    steps: [
-      {
-        id: `act-${id}-1`,
-        title: 'Bước 1: Tìm hiểu mục đích và các bước thực hiện',
-        description: `Đọc kỹ yêu cầu và hiểu rõ tại sao cần rèn luyện "${title}" trong cuộc sống học đường.`
-      },
-      {
-        id: `act-${id}-2`,
-        title: 'Bước 2: Học sinh trực tiếp thực hành',
-        description: `Tự giác thực hiện các hành động theo quy trình, kiểm tra kết quả xem đã đạt chuẩn chưa.`
-      },
-      {
-        id: `act-${id}-3`,
-        title: 'Bước 3: Đánh giá và duy trì thành thói quen mỗi ngày',
-        description: `Ghi nhận sự tiến bộ của bản thân và cam kết tiếp tục duy trì đều đặn suốt năm học.`
-      }
-    ],
-    parentTip: `Đối với học sinh cấp 1, việc khen ngợi cụ thể vào hành động và tính tự giác ("Ba mẹ rất tự hào vì con tự nhớ lịch học!") sẽ hiệu quả hơn nhiều so với việc chỉ trích hay thúc giục liên tục.`
+// Mỗi kỹ năng có nội dung riêng; giữ nguyên thứ tự và ID để bảo toàn nhật ký.
+function buildPrimaryLesson(id, template, pillar, templateIndex, iteration) {
+  const detailed = CORE_SKILLS_CATALOG[pillar]?.find(item => item.title === template.title);
+  const additional = ADDITIONAL_SKILLS[pillar]?.[templateIndex];
+  if (!detailed && !additional) throw new Error(`Thiếu tình huống: ${pillar} / ${template.title}`);
+  const keys = ['A', 'B', 'C', 'D'];
+  const correctIndex = (id - 1) % keys.length;
+  const [situation, correct, ...rest] = additional || [];
+  const summary = rest.at(-1);
+  const distractors = rest.slice(0, 3);
+  let wrongIndex = 0;
+  const quiz = detailed?.quiz || {
+    question: 'Nếu gặp tình huống này, con sẽ làm gì?',
+    correctKey: keys[correctIndex],
+    hint: 'Con hãy nghĩ cách vừa giải quyết việc trước mắt, vừa quan tâm đến bản thân và mọi người.',
+    options: keys.map((key, index) => ({
+      key,
+      text: index === correctIndex ? correct : distractors[wrongIndex++],
+      isCorrect: index === correctIndex,
+      feedback: index === correctIndex
+        ? `Con đã chọn cách phù hợp. ${summary}`
+        : `Con thử cân nhắc lại nhé. ${summary}`,
+    })),
   };
-
-  const objective = `Giúp học sinh cấp 1 nắm vững và hình thành thói quen "${title}", phát triển toàn diện trụ cột ${pillar} để trở thành người tự lập, văn minh và tự tin.`;
-
+  const safeTitles = {
+    'Uống đủ 1.5 - 2 lít nước lọc mỗi ngày, hạn chế nước ngọt có gas': 'Uống nước đều đặn theo nhu cầu, hạn chế nước ngọt',
+    'Ngủ đủ 9 tiếng mỗi đêm để phát triển thể chất và trí não tối ưu': 'Ngủ đủ giấc theo tuổi và giữ giờ ngủ đều đặn',
+    'Kỹ năng thoát hiểm và dùng khăn ẩm khi có chuông báo cháy': 'Kỹ năng thoát hiểm an toàn khi có chuông báo cháy',
+  };
+  const baseTitle = safeTitles[template.title] || template.title;
+  const title = iteration ? `${baseTitle} (Rèn luyện nâng cao cấp độ ${iteration + 1})` : baseTitle;
+  const conclusion = detailed?.conclusion || {
+    keyTakeaway: summary,
+    summary: `Trong tình huống vừa học, cách phù hợp là: ${correct} ${summary}`,
+    actionSteps: [correct, 'Kể lại cho ba mẹ hoặc thầy cô vì sao con chọn cách này.', 'Thử áp dụng bài học khi gặp tình huống tương tự, nhờ người lớn hỗ trợ khi cần.'],
+    parentTeacherTip: 'Cho con tự chọn và nói lý do trước khi giải thích. Nếu con chưa chọn đúng, khuyến khích con suy nghĩ lại, không chê bai hay ép con trả lời.',
+  };
   return {
-    id,
-    title,
-    pillar,
-    duration: duration || '10 - 15 phút',
-    icon: icon || '🌱',
-    objective,
-    script,
-    activity
+    id, title, pillar, duration: template.dur || '10 - 15 phút', icon: template.icon || '🌱',
+    objective: detailed?.objective || `Sau bài học, con có thể ${correct.charAt(0).toLowerCase() + correct.slice(1)}`,
+    situation: detailed?.situation || situation,
+    quiz, conclusion,
+    // Nhật ký tiếp tục dùng các bước thực hành sau phần tổng kết.
+    activity: {
+      type: 'checklist',
+      steps: conclusion.actionSteps.map((description, index) => ({id: `act-${id}-${index + 1}`, title: `Việc ${index + 1}`, description})),
+      parentTip: conclusion.parentTeacherTip,
+    },
   };
 }
 
-// Hàm sinh 365 bài học xoay vòng 8 trụ cột chuẩn Tiểu học
 export function generate365PrimaryLessons() {
   const lessons = [];
-  const pillarKeys = PILLARS_8;
-  let currentId = 1;
-
   while (lessons.length < 365) {
-    for (const pillar of pillarKeys) {
+    for (const pillar of PILLARS_8) {
       if (lessons.length >= 365) break;
-
-      const templates = PRIMARY_SCHOOL_LESSONS[pillar] || [];
-      const templateIndex = Math.floor((currentId - 1) / pillarKeys.length) % templates.length;
-      const baseTemplate = templates[templateIndex] || {
-        title: `Rèn luyện kỹ năng ${pillar} dành cho học sinh tiểu học #${currentId}`,
-        icon: '🌱',
-        dur: '10 - 15 phút'
-      };
-
-      const iteration = Math.floor((currentId - 1) / (pillarKeys.length * templates.length));
-      let finalTitle = baseTemplate.title;
-      if (iteration > 0) {
-        finalTitle = `${baseTemplate.title} (Rèn luyện nâng cao cấp độ ${iteration + 1})`;
-      }
-
-      lessons.push(
-        buildPrimaryLesson(
-          currentId,
-          finalTitle,
-          pillar,
-          baseTemplate.icon,
-          baseTemplate.dur
-        )
-      );
-
-      currentId++;
+      const id = lessons.length + 1;
+      const templates = PRIMARY_SCHOOL_LESSONS[pillar];
+      const round = Math.floor((id - 1) / PILLARS_8.length);
+      const templateIndex = round % templates.length;
+      const iteration = Math.floor(round / templates.length);
+      lessons.push(buildPrimaryLesson(id, templates[templateIndex], pillar, templateIndex, iteration));
     }
   }
-
   return lessons;
 }
 
-// Thực thi sinh dữ liệu
 const all365Lessons = generate365PrimaryLessons();
-
-// 1. Ghi vào src/data/full_365_lessons.json
-const dest1 = path.join(__dirname, '..', 'src', 'data', 'full_365_lessons.json');
-fs.writeFileSync(dest1, JSON.stringify(all365Lessons, null, 2), 'utf-8');
-
-// 2. Ghi vào file root: full_365_lessons.json
-const dest2 = path.join(__dirname, '..', 'full_365_lessons.json');
-fs.writeFileSync(dest2, JSON.stringify(all365Lessons, null, 2), 'utf-8');
-
-console.log(`Da tao thanh cong ${all365Lessons.length} bai hoc cap 1 tai:\n  1. ${dest1}\n  2. ${dest2}`);
+for (const lesson of all365Lessons) {
+  if (!lesson.objective || !lesson.situation || !lesson.conclusion?.summary ||
+      lesson.quiz.options.length !== 4 || lesson.quiz.options.map(o => o.key).join('') !== 'ABCD' ||
+      lesson.quiz.options.filter(o => o.isCorrect).length !== 1 ||
+      !lesson.quiz.options.every(o => o.text && o.feedback && o.isCorrect === (o.key === lesson.quiz.correctKey))) {
+    throw new Error(`Dữ liệu bài ${lesson.id} chưa hợp lệ`);
+  }
+}
+for (const dest of ['src/data/full_365_lessons.json', 'full_365_lessons.json']) {
+  fs.writeFileSync(path.join(__dirname, '..', dest), JSON.stringify(all365Lessons, null, 2) + '\n', 'utf8');
+}
+console.log(`Đã tạo ${all365Lessons.length} bài: Mục tiêu → Tình huống → A/B/C/D → Kết luận.`);

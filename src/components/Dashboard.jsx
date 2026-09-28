@@ -185,7 +185,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Lesson Big Title */}
-                <div className="space-y-2 mb-5">
+                <div className="space-y-2.5 mb-5">
                   <div className="flex items-center gap-3">
                     <span className="text-4xl p-2.5 bg-white/90 rounded-2xl shadow-xs border border-emerald-100">
                       {nextLesson.icon}
@@ -194,9 +194,27 @@ export default function Dashboard({
                       {nextLesson.title}
                     </h3>
                   </div>
-                  <p className="text-slate-600 text-sm font-semibold leading-relaxed bg-white/70 p-3.5 rounded-2xl border border-emerald-100/80">
-                    🎯 <strong className="text-slate-800">Mục tiêu:</strong> {nextLesson.objective}
+
+                  {/* 4-step workflow badge */}
+                  <div className="flex items-center gap-1.5 text-[11px] font-black text-emerald-800 bg-white/80 py-1.5 px-3 rounded-xl border border-emerald-200/90 flex-wrap">
+                    <span className="text-emerald-700">🎯 Mục tiêu</span>
+                    <span>→</span>
+                    <span className="text-amber-700">📖 Tình huống</span>
+                    <span>→</span>
+                    <span className="text-indigo-700">💡 Chọn A-B-C-D</span>
+                    <span>→</span>
+                    <span className="text-teal-700">🏆 Kết luận</span>
+                  </div>
+
+                  <p className="text-slate-700 text-xs sm:text-sm font-bold leading-relaxed bg-white/70 p-3 rounded-2xl border border-emerald-100/80">
+                    🎯 <strong className="text-slate-900">Mục tiêu:</strong> {nextLesson.objective}
                   </p>
+
+                  {nextLesson.situation && (
+                    <p className="text-slate-600 text-xs font-semibold leading-relaxed bg-amber-50/70 p-3 rounded-2xl border border-amber-200/70 line-clamp-2">
+                      📖 <strong className="text-amber-950">Tình huống:</strong> "{nextLesson.situation}"
+                    </p>
+                  )}
                 </div>
 
                 {/* Big Action Button "Bắt đầu rèn luyện" */}
